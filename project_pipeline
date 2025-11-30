@@ -33,11 +33,20 @@ pipeline {
             }
         }
         stage ("Deploy") {
+            input {
+                message "can i deploy?"
+            }
             steps {
                 deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcat', path: '', url: 'http://3.239.115.150:8080/')], contextPath: 'OGPATH', war: 'target/*.war'
             }
         }
     }
-    
+    post {
+        always {
+              mail to: 'hariharankoleti9@gmail.com',
+              subject: "Pipeline status: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} \n build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+
+       }
     }
 }
