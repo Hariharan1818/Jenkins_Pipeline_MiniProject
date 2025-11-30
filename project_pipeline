@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    
+    stages {
+        stage ("code") {
+            steps {
+                git 'https://github.com/Hariharan1818/one.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh '''
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=myproject \
+                    -Dsonar.host.url=http://54.236.32.74:9000 \
+                    -Dsonar.login=c5462099ba494fb606b422fb4e24be8f676d8213
+                    '''
+                }
+            }
+        }
+        stage ("Build&Test") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.7.3.war', type: 'war']], credentialsId: 'Nexus', groupId: 'in.javahome', nexusUrl: '13.221.137.4:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: '8.7.3'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcat', path: '', url: 'http://3.239.115.150:8080/')], contextPath: 'OGPATH', war: 'target/*.war'
+            }
+        }
+    }
+    
+    }
+}
